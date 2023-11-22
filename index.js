@@ -4,8 +4,8 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const download = require("download");
 const saveAs = require("file-saver");
-
-async function getSong(url) {
+let counter = 0;
+async function getSong(url, n) {
   const https = require("https");
   const fs = require("fs");
   const path = require("path");
@@ -30,18 +30,27 @@ async function getSong(url) {
 
       file.on("finish", () => {
         file.close(() => {
-          console.log("File downloaded successfully.");
+          counter++;
+          if (counter == n) console.log("File downloaded successfully.");
+          console.log(
+            "All files downloadedd  ..................................."
+          );
         });
       });
     })
     .on("error", (err) => {
       fs.unlink(destinationPath, () => {
-        console.error(`Error downloading file: ${err.message}`);
+        counter++;
+        if (counter == n)
+          console.error(`Error downloading file: ${err.message}`);
+        console.log(
+          "All files downloadedd  ..................................."
+        );
       });
     });
 }
 
-async function downloadSongs(link) {
+async function downloadSongs(link, n) {
   //console.log(link);
   const axiosResponse = await axios.request({
     method: "GET",
@@ -57,17 +66,13 @@ async function downloadSongs(link) {
   $(".entry-content p a").each((i, songs) => {
     // console.log($(songs).attr("href"));
     const arr = $(songs).attr("href").split(".");
-    if (arr[arr.length - 1] == "zip") download.push($(songs).attr("href"));
+    if (arr[arr.length - 1] == "zip") getSong($(songs).attr("href"), n);
   });
-  console.log(download);
-  for (let i = 0; i < download.length; i++) {
-    await getSong(download[i]);
-  }
 }
 async function performScraping() {
   const axiosResponse = await axios.request({
     method: "GET",
-    url: "https://samadada.com/harris-jayaraj/",
+    url: "https://samadada.com/karan-songs/",
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
@@ -79,8 +84,9 @@ async function performScraping() {
     let link = $(song).find("a").attr("href");
     links.push(link);
   });
+  console.log(links.length);
   for (let i = 0; i < links.length; i++) {
-    await downloadSongs(links[i]);
+    await downloadSongs(links[i], links.length);
   }
   //console.log(links);
 }
